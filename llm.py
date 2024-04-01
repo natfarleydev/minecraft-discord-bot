@@ -15,6 +15,7 @@ from langchain_community.document_loaders.html import UnstructuredHTMLLoader
 from langchain_community.document_loaders.async_html import AsyncHtmlLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
 from langchain.callbacks.base import AsyncCallbackHandler
+from memory import format_memory_for_llm
 
 
 
@@ -93,16 +94,16 @@ extract_chain = ChatPromptTemplate.from_messages([
 ]) | llm | output_parser
 
 
-async def reply(prompt):
+async def reply(prompt, channel_id: int):
     # Poor man's function calling
     should_search = await chain.ainvoke({"input": f"Would this prompt benefit from searching the internet to get more up to date or thorough information? Reply with only TRUE or FALSE: {prompt}"})
     print(f"Should search: {should_search}")
     # Sometimes the llm responds with TRUE and an emoji, so it's enough for the message to contain 'true'
     if "true" in should_search.lower():
         search_results = await search(prompt)
-        final_prompt = f"Discord message: {prompt}\n\nSupporting information: {search_results}"
+        final_prompt = f"Previous messages: {format_memory_for_llm(channel_id)}\n\nDiscord message: {prompt}\n\nSupporting information: {search_results}"
     else:
-        final_prompt = prompt
+        final_prompt = f"Previous messages: {format_memory_for_llm(channel_id)}\n\nDiscord message: {prompt}"
 
     response = await chain.ainvoke({"input": final_prompt})
     retval = {

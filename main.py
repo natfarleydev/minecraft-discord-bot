@@ -21,8 +21,8 @@ class MyClient(discord.Client):
         if message.content.lower().startswith('ai') or message.channel.type == discord.ChannelType.private:
             async with message.channel.typing():
                 reply = await llm.reply(message.content, message.channel.id)
-                # await message.channel.send(f'{reply["response"]}\n\n[Input tokens: {reply["input_token_count"]}, Output tokens: {reply["output_token_count"]}, Cost: ${reply["cost"]}]')
-                await message.channel.send(f'{reply["response"]}')
+                await message.channel.send(f'{reply["response"]}\n\n[Input tokens: {reply["input_token_count"]}, Output tokens: {reply["output_token_count"]}, Cost: ${reply["cost"]}]')
+                # await message.channel.send(f'{reply["response"]}')
         
     
     async def on_error(self, event_method: str, /, *args, **kwargs):

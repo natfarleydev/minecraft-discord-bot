@@ -1,4 +1,5 @@
 import json
+from typing import TypedDict
 from asyncio.runners import run
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.experimental import ChatAnthropicTools
@@ -106,10 +107,17 @@ async def reply(prompt, channel_id: int):
         final_prompt = f"Previous messages: {format_memory_for_llm(channel_id)}\n\nDiscord message: {prompt}"
 
     response = await chain.ainvoke({"input": final_prompt})
-    retval = {
+    class RetvalType(TypedDict):
+        response: str
+        input_token_count: int
+        output_token_count: int
+        cost: float | None
+
+    retval: RetvalType = {
         "response": response,
         "input_token_count": token_counting_llm.get_num_tokens(final_prompt),
         "output_token_count": token_counting_llm.get_num_tokens(response),
+        "cost": None,
     }
     retval["cost"] = 0.25 * retval["input_token_count"]/1_000_000.0 + 1.25 * retval["output_token_count"]/1_000_000
     return retval

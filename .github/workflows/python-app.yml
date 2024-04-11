@@ -31,4 +31,4 @@ jobs:
       run: |
         echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> .env
         echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> .env
-        docker compose down && docker compose up -d
+        docker compose down && docker compose up -d --build

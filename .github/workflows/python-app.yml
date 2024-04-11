@@ -18,15 +18,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: deadsnakes/action@v2.1.1
-      with:
-        python-version: "3.11"
-    - name: Install dependencies
-      run: |
-        python -m venv env
-        source env/bin/activate
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+#    - uses: deadsnakes/action@v2.1.1
+#      with:
+#        python-version: "3.11"
+#    - name: Install dependencies
+#      run: |
+#        python -m venv env
+#        source env/bin/activate
+#        python -m pip install --upgrade pip
+#        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Restart the docker containers
       run: |
         echo "DISCORD_BOT=${{ secrets.DISCORD_BOT }}" >> .env

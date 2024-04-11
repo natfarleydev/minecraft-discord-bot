@@ -10,5 +10,5 @@ google-api-python-client==2.125.0
 google-auth==2.29.0
 google-auth-httplib2==0.2.0
 googleapis-common-protos==1.63.0
-duckduckgo_search=5.2.1
+duckduckgo_search==5.2.1
 transformers==4.39.2

@@ -27,6 +27,7 @@ jobs:
         source env/bin/activate
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: print the parent's parent directory
+    - name: Restart the docker containers
       run: |
-        ls ../../
+        echo "DISCORD_BOT=${{ secrets.DISCORD_BOT }}" >> .env
+        docker compose down && docker compose up -d

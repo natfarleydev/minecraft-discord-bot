@@ -1,11 +1,13 @@
 from collections import defaultdict
 import discord
+import re
 
 memory: dict[int, list[discord.message.Message]] = defaultdict(list)
 
 MEMORY_LIMIT = 10
 
 def add_to_memory(channel_id: int ,msg: discord.message.Message):
+    msg.content = re.sub(r'---.*', '', msg.content, re.DOTALL)
     memory[channel_id].append(msg)
     if len(memory) > MEMORY_LIMIT:
         memory.pop(0)

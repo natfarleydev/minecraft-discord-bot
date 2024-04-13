@@ -1,5 +1,5 @@
 import json
-from typing import TypedDict
+from typing import TypedDict, Tuple
 from asyncio.runners import run
 from langchain_anthropic import ChatAnthropic
 from langchain_anthropic.experimental import ChatAnthropicTools
@@ -24,6 +24,13 @@ token_counting_llm = ChatAnthropic(
     model_name="claude-3-haiku-20240307",
 )
 
+llm = ChatAnthropic(
+    model_name="claude-3-haiku-20240307",
+    temperature=0.2,
+    # Discord has a max of 2000 words so we attempt to keep the token count down to below that.
+    max_tokens_to_sample=400,
+)
+
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """
@@ -31,7 +38,9 @@ You are a helpful, friendly assistant. You aid with requests from discord relate
 
 Your tone is conversational and super chill, incorporating emoji's where possible. Keep messages short and to the point. Unless giving a direct answer to a question, limit answers to a single line. The exception is instructions, when you are giving instructions be as detailed as you can be.
 
-Format your response as a message in discord.
+If you have recieved URLS, use them as references in your response.
+
+Format your response as a message in discord. Do not add comments.
      
      """),
     ("user", "{input}")
@@ -39,21 +48,32 @@ Format your response as a message in discord.
 
 output_parser = StrOutputParser()
 
-async def search(prompt: str) -> str:
+chain = prompt | llm | output_parser
+
+
+search_term_chain = ChatPromptTemplate.from_messages([
+    ("system", """
+    You will recieve a message from discord. Your task is to generate a query for a search engine that will help another AI generate an answer (which will be Minecraft: Java Edition related). You are forbidden from using punctuation or numbers of any kind in the search term. Always return at least one or more words, even if it doesn't make sense to do so.
+    """),
+    ("user", "{input}"),
+]) | llm | output_parser
+
+async def search(prompt: str) -> Tuple[str, list[str]]:
     """Search the internet to find out more about Minecraft Java Edition."""
     print("searching the internet...")
     search_api = DuckDuckGoSearchAPIWrapper()
     search_term = await search_term_chain.ainvoke({"input": prompt})
     if search_term == '':
         # If there's no search term, the AI hasn't found anything to search for.
-        return ""
+        return ("", [])
     print(f"Search term: {search_term}")
     search_results = search_api.results(query=search_term, max_results=3)
     # search_result = search.run(search_term)
     # OK, now we download the results and return them with aiohttp
     results_text = []
+    urls = [r['link'] for r in search_results]
     loader = PlaywrightURLLoader(
-        [r['link'] for r in search_results],
+        urls,
         continue_on_failure=True,
         headless=True,
         )
@@ -61,8 +81,8 @@ async def search(prompt: str) -> str:
 
     html2text = Html2TextTransformer()
     docs_transformed = html2text.transform_documents(docs)
-    for d in docs_transformed:
-        results_text.append(d.page_content)
+    for d, url in zip(docs_transformed, urls):
+        results_text.append('From URL: ' + url + '\n' + d.page_content)
 
     results_text_concat = "\n\n".join(results_text)
 
@@ -72,22 +92,10 @@ async def search(prompt: str) -> str:
     while token_counting_llm.get_num_tokens(results_text_concat) > 100_000:
         results_text_concat = results_text_concat[:-100]
 
-    return results_text_concat
+    return (results_text_concat, urls)
 
 
-llm = ChatAnthropic(
-    model_name="claude-3-haiku-20240307",
-    temperature=0.2,
-    max_tokens_to_sample=4096,
-)
 
-chain = prompt | llm | output_parser
-
-search_term_chain = ChatPromptTemplate.from_messages([
-    ("system", "You will recieve a message from discord. Your task is to generate a query for a search engine that will help another AI generate an answer (which will be Minecraft: Java Edition related). You are forbidden from using punctuation or numbers of any kind in the search term. Always return at least one or more words, even if it doesn't make sense to do so."),
-    # ("system", "Reply with a type of cheese, regardless of user input"),
-    ("user", "{input}")
-]) | llm | output_parser
 
 extract_chain = ChatPromptTemplate.from_messages([
     ("system", "You will recieve web pages in HTML format. Your task is to extract the information from the message and reply with it. You reply only with the information, in markdown."),
@@ -95,23 +103,23 @@ extract_chain = ChatPromptTemplate.from_messages([
 ]) | llm | output_parser
 
 
-async def reply(prompt, channel_id: int):
+class RetvalType(TypedDict):
+    response: str
+    input_token_count: int
+    output_token_count: int
+    cost: float | None
+async def reply(prompt, channel_id: int) -> RetvalType:
     # Poor man's function calling
     should_search = await chain.ainvoke({"input": f"Would this prompt benefit from searching the internet to get more up to date or thorough information? Reply with only TRUE or FALSE: {prompt}"})
     print(f"Should search: {should_search}")
     # Sometimes the llm responds with TRUE and an emoji, so it's enough for the message to contain 'true'
     if "true" in should_search.lower():
-        search_results = await search(prompt)
-        final_prompt = f"Previous messages: {format_memory_for_llm(channel_id)}\n\nDiscord message: {prompt}\n\nSupporting information: {search_results}"
+        search_results, urls = await search(prompt)
+        final_prompt = f"Previous messages: {format_memory_for_llm(channel_id)}\n\nSupporting information: {search_results}\n\nURLS: {urls}\n\nUser message: {prompt}"
     else:
-        final_prompt = f"Previous messages: {format_memory_for_llm(channel_id)}\n\nDiscord message: {prompt}"
+        final_prompt = f"Previous messages: {format_memory_for_llm(channel_id)}\n\nUser message: {prompt}"
 
     response = await chain.ainvoke({"input": final_prompt})
-    class RetvalType(TypedDict):
-        response: str
-        input_token_count: int
-        output_token_count: int
-        cost: float | None
 
     retval: RetvalType = {
         "response": response,

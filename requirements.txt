@@ -12,3 +12,4 @@ google-auth-httplib2==0.2.0
 googleapis-common-protos==1.63.0
 duckduckgo_search==5.2.1
 transformers==4.39.2
+playwright==1.42.0

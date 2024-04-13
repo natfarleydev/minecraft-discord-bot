@@ -32,7 +32,7 @@ class MyClient(discord.Client):
     
     async def on_error(self, event_method: str, /, *args, **kwargs):
         # TODO make LLM format this error message
-        await args[0].channel.send(f'Ive changed')
+        await args[0].channel.send(f'Something went wrong, let me check it out :thumbsup:')
         try:
             async with args[0].channel.typing():
                 exception_type, exception, tb = sys.exc_info()
@@ -48,7 +48,7 @@ class MyClient(discord.Client):
                 response = reply + '\n\n---\n\n' + exception_information_for_prompt
                 await args[0].channel.send(response)
         except Exception as e:
-            await args[0].channel.send(f'Oh no! Something went wrong. (For the developer, the bot tried to reply but hit the following error {e})')
+            await args[0].channel.send(f'Oh no! I couldn\'t figure out what went wrong. (For the developer, the bot tried to reply but hit the following error {e})')
             traceback.print_exc()
         await super().on_error(event_method, *args, **kwargs)
 

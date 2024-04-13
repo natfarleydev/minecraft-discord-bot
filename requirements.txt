@@ -13,3 +13,5 @@ googleapis-common-protos==1.63.0
 duckduckgo_search==5.2.1
 transformers==4.39.2
 playwright==1.42.0
+unstructured==0.12.6
+unstructured-client==0.18.0

@@ -1,21 +1,12 @@
-import json
 from typing import TypedDict, Tuple
-from asyncio.runners import run
+
 from langchain_anthropic import ChatAnthropic
-from langchain_anthropic.experimental import ChatAnthropicTools
-from langchain.retrievers.web_research import WebResearchRetriever
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.documents import Document
 from langchain_community.document_transformers import Html2TextTransformer
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.tools import DuckDuckGoSearchRun
-from langchain.tools import tool, Tool, BaseTool
-import aiohttp
 from langchain_community.utilities.duckduckgo_search import DuckDuckGoSearchAPIWrapper
-from langchain_community.document_loaders.html import UnstructuredHTMLLoader
-from langchain_community.document_loaders.async_html import AsyncHtmlLoader
 from langchain_community.document_loaders.url_playwright import PlaywrightURLLoader
-from langchain.callbacks.base import AsyncCallbackHandler
+
 from memory import format_memory_for_llm
 
 
@@ -93,14 +84,6 @@ async def search(prompt: str) -> Tuple[str, list[str]]:
         results_text_concat = results_text_concat[:-100]
 
     return (results_text_concat, urls)
-
-
-
-
-extract_chain = ChatPromptTemplate.from_messages([
-    ("system", "You will recieve web pages in HTML format. Your task is to extract the information from the message and reply with it. You reply only with the information, in markdown."),
-    ("user", "{input}"),
-]) | llm | output_parser
 
 
 class RetvalType(TypedDict):

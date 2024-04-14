@@ -39,7 +39,7 @@ class MyClient(discord.Client):
                 print("Sending message:")
                 from pprint import pprint
                 pprint(reply)
-                await break_up_message_and_send(message.channel, f'{reply}\n\n--- Input tokens: {reply["input_token_count"]}, Output tokens: {reply["output_token_count"]}, Cost: ${reply["cost"]} ---')
+                await break_up_message_and_send(message.channel, f'{reply["response"]}\n\n--- Input tokens: {reply["input_token_count"]}, Output tokens: {reply["output_token_count"]}, Cost: ${reply["cost"]} ---')
         
     
     async def on_error(self, event_method: str, /, *args, **kwargs):

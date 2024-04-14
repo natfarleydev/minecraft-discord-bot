@@ -11,6 +11,19 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 
+async def break_up_message_and_send(channel: discord.abc.Messageable, message: str):
+    """
+    Attempts to send the message to discord by breaking up long messages.
+    """
+    # TODO consider using an LLM to break this up into more realistic chunks
+    if len(message) > 2000:
+        for i in range(0, len(message), 2000):
+            await channel.send(message[i:i+2000])
+    else:
+        await channel.send(message)
+
+
+
 class MyClient(discord.Client):
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
@@ -26,8 +39,7 @@ class MyClient(discord.Client):
                 print("Sending message:")
                 from pprint import pprint
                 pprint(reply)
-                await message.channel.send(f'{reply["response"]}\n\n--- Input tokens: {reply["input_token_count"]}, Output tokens: {reply["output_token_count"]}, Cost: ${reply["cost"]} ---')
-                # await message.channel.send(f'{reply["response"]}')
+                await break_up_message_and_send(message.channel, f'--- Input tokens: {reply["input_token_count"]}, Output tokens: {reply["output_token_count"]}, Cost: ${reply["cost"]} ---')
         
     
     async def on_error(self, event_method: str, /, *args, **kwargs):
@@ -46,9 +58,9 @@ class MyClient(discord.Client):
                     {"input": f'Your task is to explain this error to the user and suggest remedial action. Do not offer to help or imply in any way that you can do anything about the error (you are a bot an incapable of changing your own programming). Reply in friendly but terse language, without backticks. Information about the error is below. \n\n{exception_information_for_prompt}'},
                 )
                 response = reply + '\n\n---\n\n' + exception_information_for_prompt
-                await args[0].channel.send(response)
+                await break_up_message_and_send(args[0].channel, response)
         except Exception as e:
-            await args[0].channel.send(f'Oh no! I couldn\'t figure out what went wrong. (For the developer, the bot tried to reply but hit the following error {e})')
+            await break_up_message_and_send(args[0].channel, f'Oh no! I couldn\'t figure out what went wrong. (For the developer, the bot tried to reply but hit the following error {e})')
             traceback.print_exc()
         await super().on_error(event_method, *args, **kwargs)
 

@@ -2,7 +2,7 @@
 
 import discord
 import os
-import llm
+import llm as llm
 from memory import add_to_memory
 import traceback
 import sys

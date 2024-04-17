@@ -1,7 +1,7 @@
 discord==2.3.2
 discord.py==2.3.2
 langchain==0.1.16
-langchain-anthropic==0.1.4
+langchain-anthropic==0.1.8
 langchain-community==0.0.32
 langchain-core==0.1.42
 langchain-text-splitters==0.0.1
